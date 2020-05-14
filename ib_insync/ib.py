@@ -552,19 +552,15 @@ class IB:
 
     def bracketOrder(
             self, action: str, quantity: float,
-            limitPrice: float, takeProfitPrice: float,
+            limitPrice: float, takeProfitPrice1: float, takeProfitPrice2: float,
             stopLossPrice: float, **kwargs) -> BracketOrder:
         """
         Create a limit order that is bracketed by a take-profit order and
         a stop-loss order. Submit the bracket like:
-
         .. code-block:: python
-
             for o in bracket:
                 ib.placeOrder(contract, o)
-
         https://interactivebrokers.github.io/tws-api/bracket_order.html
-
         Args:
             action: 'BUY' or 'SELL'.
             quantity: Size of order.
@@ -572,6 +568,7 @@ class IB:
             takeProfitPrice: Limit price of profit order.
             stopLossPrice: Stop price of loss order.
         """
+        half_quantity = quantity / 2
         assert action in ('BUY', 'SELL')
         reverseAction = 'BUY' if action == 'SELL' else 'SELL'
         parent = LimitOrder(
@@ -579,8 +576,14 @@ class IB:
             orderId=self.client.getReqId(),
             transmit=False,
             **kwargs)
-        takeProfit = LimitOrder(
-            reverseAction, quantity, takeProfitPrice,
+        takeProfit1 = LimitOrder(
+            reverseAction, half_quantity, takeProfitPrice1,
+            orderId=self.client.getReqId(),
+            transmit=False,
+            parentId=parent.orderId,
+            **kwargs)
+        takeProfit2 = LimitOrder(
+            reverseAction, half_quantity, takeProfitPrice2,
             orderId=self.client.getReqId(),
             transmit=False,
             parentId=parent.orderId,
@@ -591,7 +594,7 @@ class IB:
             transmit=True,
             parentId=parent.orderId,
             **kwargs)
-        return BracketOrder(parent, takeProfit, stopLoss)
+        return BracketOrder(parent, takeProfit1, takeProfit2, stopLoss)
 
     @staticmethod
     def oneCancelsAll(
