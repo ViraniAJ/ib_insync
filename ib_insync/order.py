@@ -322,7 +322,8 @@ class Trade:
 
 class BracketOrder(NamedTuple):
     parent: Order
-    takeProfit: Order
+    takeProfit1: Order
+    takeProfit2: Order
     stopLoss: Order
 
 
